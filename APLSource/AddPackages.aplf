@@ -1,0 +1,5 @@
+ AddPackages←{
+     str←(⊣,' --version ',⊢)/⍵
+     AP←{⎕CMD'dotnet add ',⍺,' package ',⍵}
+     ⍺∘AP¨str
+ }

@@ -1,0 +1,8 @@
+ GetDotNetVersion←{
+⍝ ⍵: char vec :: .NET version
+⍝ ←: 0=nothing, 1=.net Framework, 2=NET CORE
+     dnv←⊃2⊃'.'⎕VFI ⍵
+     4=dnv:1   ⍝ .NET Framework
+     4<dnv:2   ⍝ .NET Core / new .NET
+     0         ⍝ Nothing
+ }

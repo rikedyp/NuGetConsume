@@ -1,0 +1,3 @@
+ CreateDotNetProject←{
+     ⎕CMD'dotnet new classlib -o ',⍵
+ }

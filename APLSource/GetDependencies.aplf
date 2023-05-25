@@ -1,0 +1,10 @@
+ GetDependencies←{
+⍝ ⍵: simple char vec :: NuGet project directory
+⍝ ←: error message or 0
+     ~⎕NEXISTS ⍵,'/dependencies-dotnet.json5':'Please define dependencies in "',(⍵,'/dependencies-dotnet.json5')⎕SIGNAL 6
+     json←(⎕JSON ⎕OPT'Dialect' 'JSON5')⊃⎕NGET ⍵,'/dependencies-dotnet.json5'
+     key←json.packages.⎕NL ¯2
+     pkg←JSONDemangle¨key
+     ver←json.packages∘⍎¨key
+     ⍉↑pkg ver
+ }

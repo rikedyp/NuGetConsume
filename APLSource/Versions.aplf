@@ -1,0 +1,21 @@
+ Versions←{
+⍝ ⍵: one or more package names
+⍝ ←: list of versions installed for each package specified
+     ⎕USING←'System'
+     path←Environment.(GetFolderPath SpecialFolder.UserProfile)
+     cache←path,'/.nuget/packages'
+     ~⎕NEXISTS cache:('global-cache not found (',pkg,')')⎕SIGNAL 19
+     pkgs←cache∘,¨'/'∘,¨⊆⍵
+     List←⊃(⊣,',',⊢)/
+     ~∧/ex←⎕NEXISTS pkgs:('packages not found: ',(List ⍵/⍨~ex),'. Try Restore ')⎕SIGNAL 19
+
+     SubDirs←{(n t)←0 1(⎕NINFO⍠1)⍵,'/*' ⋄ (t=1)/n}
+     CutAtEnd←{(1-(⌽⍵)⍳⍺)↑⍵}
+
+     pv←SubDirs¨pkgs
+     pkgvers←'/'∘CutAtEnd¨¨pv
+
+     netvers←(⊃,/)¨'/'∘CutAtEnd¨¨¨¨SubDirs¨∘SubDirs¨¨pv
+
+     pkgs pkgvers netvers
+ }
