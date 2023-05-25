@@ -1,0 +1,10 @@
+ SampleNE;⎕USING
+⍝ Add "NETCore.Encrypt": "2.0.9" to dependencies-dotnet.json5
+ ⎕USING←'System' 'System.Reflection'
+ ⍪AppDomain.CurrentDomain.GetAssemblies
+
+ ⎕USING←(⊂'System'),(Using'NETCore.Encrypt')
+ ⍪AppDomain.CurrentDomain.GetAssemblies
+
+
+ EncryptProvider.Sha256⊂'Hello'
