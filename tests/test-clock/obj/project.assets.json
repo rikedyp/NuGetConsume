@@ -1,0 +1,119 @@
+{
+  "version": 3,
+  "targets": {
+    "net5.0": {
+      "Clock/1.0.3": {
+        "type": "package",
+        "dependencies": {
+          "ClockAnalyser": "1.0.99"
+        },
+        "compile": {
+          "lib/netstandard1.3/Clock.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.3/Clock.dll": {}
+        }
+      },
+      "ClockAnalyser/1.0.99": {
+        "type": "package"
+      }
+    }
+  },
+  "libraries": {
+    "Clock/1.0.3": {
+      "sha512": "2nvPfdGeE+tAUBKdQpFXQcbaYvzX5ykaoP6lH+KEkmX0XTgwJrp3csCReSVcX6y6Rc/H3vspsq5MzqZ9pr2Hbw==",
+      "type": "package",
+      "path": "clock/1.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "clock.1.0.3.nupkg.sha512",
+        "clock.nuspec",
+        "lib/netstandard1.3/Clock.dll"
+      ]
+    },
+    "ClockAnalyser/1.0.99": {
+      "sha512": "hmtx5eHjkqEdUEduRlA3eHB2whV7DlJ7Y5cRUAmYMznsrUIpeVsgrvvp5lLiTw9kXYKlyHih96mBH6KosDeWcw==",
+      "type": "package",
+      "path": "clockanalyser/1.0.99",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/cs/ClockAnalyser.dll",
+        "clockanalyser.1.0.99.nupkg.sha512",
+        "clockanalyser.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net5.0": [
+      "Clock >= 1.0.3"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\rpark\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\g\\NuGetConsume\\tests\\test-clock\\test-clock.csproj",
+      "projectName": "test-clock",
+      "projectPath": "C:\\g\\NuGetConsume\\tests\\test-clock\\test-clock.csproj",
+      "packagesPath": "C:\\Users\\rpark\\.nuget\\packages\\",
+      "outputPath": "C:\\g\\NuGetConsume\\tests\\test-clock\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\rpark\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net5.0"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      }
+    },
+    "frameworks": {
+      "net5.0": {
+        "targetAlias": "net5.0",
+        "dependencies": {
+          "Clock": {
+            "target": "Package",
+            "version": "[1.0.3, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.100\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

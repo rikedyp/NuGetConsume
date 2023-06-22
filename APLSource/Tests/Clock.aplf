@@ -1,0 +1,7 @@
+ Clock
+ ⎕CS ##
+ ngc←New CiderConfig.HOME,'/tests/clock-test/clock.json5'
+⍝ ngc.Restore
+
+ ⎕USING←ngc.Using''
+ DateTime.Now

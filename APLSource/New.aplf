@@ -1,0 +1,8 @@
+ proj←New cfg;deps_dir;pkg
+ 'proj'⎕NS''
+ proj.⎕DF'[NuGetConsume Project Namespace]'
+ proj.pkg←GetDependencies cfg
+⍝ tgt←GetTargets cfg
+ deps_dir←⊃⎕NPARTS cfg
+ CreateDotNetProject⊃⎕NPARTS deps_dir
+deps_dir AddPackages proj.pkg

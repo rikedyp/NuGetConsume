@@ -1,4 +1,4 @@
- Versions←{
+ Versions2←{
 ⍝ ⍵: one or more package names
 ⍝ ←: list of versions installed for each package specified
      ⎕USING←'System'
@@ -9,6 +9,8 @@
      pkgs←cache∘,¨'/'∘,¨⊆deps
      List←⊃(⊣,',',⊢)/
      ~∧/ex←⎕NEXISTS pkgs:('packages not found: ',(List ⍵/⍨~ex),'. Try Restore ')⎕SIGNAL 19
+
+     PackageInfoFromDir¨pkgs
 
      SubDirs←{(n t)←0 1(⎕NINFO⍠1)⍵,'/*' ⋄ (t=1)/n}
      CutAtEnd←{(1-(⌽⍵)⍳⍺)↑⍵}

@@ -1,0 +1,13 @@
+PackageInfoFromDir←{
+    og←⍵
+    n←+/⍵∊'/\'
+    SubDirs←{(n t)←0 1(⎕NINFO ⎕OPT('Wildcard' 1)('Recurse' 1))⍵,'/*' ⋄ (t=1)/n}
+    s←↑SubDirs ⍵
+    v←(n+1)=⊢/i←+\b←s∊'/\'
+    ver←1(↓⍤1)((n+1)=v⌿i)(⌿⍤1)(v⌿s)
+    RTB←{⍵⌿⍨~∨\' '=⍵}
+    fwk←1↓¨v⊂(⊂⍤RTB⍤1)s⌿⍤1⍨∨\⌽<\⌽b
+    Rmv←~∘(⊂'/lib')
+    fwk←Rmv¨fwk
+    ver fwk
+}

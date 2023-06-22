@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "dgDdtX84nC2J39GJAp87yNXWflOq1kd5CIsrW+r/QvHY4ow/yMUzIFsUHxkkxJHVQ97HCxhfsR81W1+tKcXkXg==",
+  "success": true,
+  "projectFilePath": "C:\\g\\NuGetConsume\\tests\\test-clock\\test-clock.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\rpark\\.nuget\\packages\\clock\\1.0.3\\clock.1.0.3.nupkg.sha512",
+    "C:\\Users\\rpark\\.nuget\\packages\\clockanalyser\\1.0.99\\clockanalyser.1.0.99.nupkg.sha512"
+  ],
+  "logs": []
+}

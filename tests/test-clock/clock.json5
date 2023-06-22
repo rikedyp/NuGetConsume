@@ -1,0 +1,9 @@
+{
+	packages: {
+		Clock: "1.0.3"
+	},
+	targets: [
+		"auto",
+		"6.0"
+	]
+}
