@@ -1,0 +1,5 @@
+GetProjectDir←{
+    2=⎕nc'project_dir':project_dir
+    ⎕using←'System' 'System.Runtime.dll'
+    path←System.IO.Path.GetTempPath,⍵
+}

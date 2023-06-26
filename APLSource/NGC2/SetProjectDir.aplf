@@ -1,0 +1,4 @@
+SetProjectDir←{
+    ''≡⍺:project_dir⊢←SetTmpDir ⍵
+    project_dir←SetPathByOS ⍺,'/',⍵
+}

@@ -1,0 +1,7 @@
+ TestPackageNameOnlyMultiple
+ pkgs←⍪'Clock' 'Netcore.Encrypt' 'Parquet.Net'
+ NGC←##.NGC
+ '/tmp'NGC.Init'myapp'
+ NGC.Install pkgs
+
+ ⍝

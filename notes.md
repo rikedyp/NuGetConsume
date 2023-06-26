@@ -1,5 +1,11 @@
 NuGetConsume
 - needs a better name
+	- DotNetDepend
+	- UsingDotNet
+	- NuGetAPL
+	- GetNuGet
+	- GetDotNet
+	- NGC?
 
 Class - allows hiding internals
 - could do this with public Functions, while "private" methods are hidden under another namespace?
@@ -53,6 +59,12 @@ Opinionated:
 - If we have targets in the config file then the user needs to access that somehow...
 
 ## Config
+Packages may be specified as follows:
+
+- Must have a package name. This is the name listed on the NuGet repository.
+- Optionally may specify a version
+- Optionally may specify the path to a **.dll** file
+
 ```
 packages: {
 	"pkg": "x.y.z",
@@ -68,6 +80,35 @@ Create a dependencies configuration file. It is best to place this in a dedicate
 
 - Doesn't have to be called that - point `New` to the config file and it can infer the directory.
 
+!!!Note
+	Updates to packages are explicit
+
+```
+]Get NGC
+]Tatin.InstallPackages NGC
+NGC.Install packages
+NGC.Restore
+```
+
+Restore dependencies from a dotnet project:
+
+```
+NGC.Restore'/path/to/project.csproj'
+```
+
+### In the session
+1. User installs packages
+2. User sets `⎕USING`
+3. User uses packages
+
+### In an application
+1. During development, user installs packages
+2. When opening the project for development, call `NGC.Restore` to make sure dependencies are installed
+3. Call `⎕USING`
+	- `⎕USING` has namespace scope, so you could call it once and establish in the root namespace
+	- Or set `⎕USING`
+	There may be slight negative performance impacts for repeatedly setting `⎕USING`, but you might find it useful for the source code to state explicitly which packages are available, and also to prevent name conflicts in other parts of your application.
+
 ### With the project namespace
 ```
 ]get NGS
@@ -79,6 +120,14 @@ net.Restore
 
 ### Export
 `NGS.Export'target'` will return a namespace configured for the target specified.
+
+Export dependencies by copying dotnet project to a directory:
+`NGC.Export 'dir'`  
+
+Export dependencies by copying DLLs and package config to a directory:
+`NGC.Export 'dir' 'target_framework'`
+
+You might need to install additional an .NET SDK in order to target a specific .NET version (framework). These can be [downloaded from Microsoft](https://dotnet.microsoft.com/en-us/download/visual-studio-sdks?cid=msbuild-developerpacks).
 
 ### Packaging DLLs with my project
 During a project build, `NGS.Export` copies DLLs into a specified folder and stores the relative paths which can be accessed by `NGS.Using`.
@@ -117,3 +166,55 @@ Because DLLs or .NET projects are files on the file system, it is reasonable tha
 │Clock│1.0.3│
 └─────┴─────┘
 ```
+
+NGC.New [config JSON file or namespace]
+NGC.AddPackages [packages matrix]
+NGC.Restore [dir]
+NGC.Export
+
+NuGetConsume is a tool for managing .NET dependencies in Dyalog APL.
+
+An NGC instance is linked to a DotNet project, which may have none or several packages as dependencies.
+- What does that mean? That means that an instance of NGC will create a dotnet project in a folder
+	- If no folder is specified, we use a temporary path recommended by .NET
+	- Otherwise, use the specified folder
+
+UsingNuGet
+
+
+API:
+- could be a namespace containing all config
+- could be functions which take paths to config as arguments?
+
+
+
+
+Usage scenarios
+
+- in session
+- part of generic project
+- part of cider project
+- part of tatin package
+
+NGC.Install packages
+NGC.Using list_of_packages
+
+## Versions
+- latest version (default)
+- this version or greater
+- this version exactly
+
+Package versions are specified using the NuGet version ranges interval notation which is [summarised on the NuGet documentation website](https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges) and in the table below:
+
+|Notation|Applied rule|Description|
+|---|---|---|
+|`1.0`|`x ≥ 1.0`|Minimum version, inclusive|
+|`[1.0,)`|`x ≥ 1.0`|Minimum version, inclusive|
+|`(1.0,)`|`x > 1.0`|Minimum version, exclusive|
+|`[1.0]`|`x == 1.0`|Exact version match|
+|`(,1.0]`|`x ≤ 1.0`|Maximum version, inclusive|
+|`(,1.0)`|`x < 1.0`|Maximum version, exclusive|
+|`[1.0,2.0]`|`1.0 ≤ x ≤ 2.0`|Exact range, inclusive|
+|`(1.0,2.0)`|`1.0 < x < 2.0`|Exact range, exclusive|
+|`[1.0,2.0)`|`1.0 ≤ x < 2.0`|Mixed inclusive minimum and exclusive maximum version|
+|`(1.0)`|invalid|invalid|

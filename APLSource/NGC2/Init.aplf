@@ -1,0 +1,6 @@
+ Init←{
+⍝ ⍺: set project dir
+⍝ 0=⎕nc'⍺':set tmp dir
+     ⍺←''
+     dir←⍺ SetProjectDir ⍵
+ }

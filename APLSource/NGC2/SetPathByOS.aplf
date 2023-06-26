@@ -1,0 +1,3 @@
+SetPathByOS←{
+   w≡¯1⎕C⊃⊃'.'⎕WG'APLVersion'
+}

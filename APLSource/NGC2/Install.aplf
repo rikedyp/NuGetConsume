@@ -1,0 +1,5 @@
+Install←{
+⍝ ⍵: package spec
+    dir←GetProjectDir project_name
+    dir∘AddPackage¨↓⍵
+}

@@ -1,0 +1,9 @@
+TestExactVersion
+pkg←'Clock' '[1.0.3]'
+NGC←##.NGC
+NGC.Init 'myapp'
+NGC.Install pkg
+⎕USING←NGC.Using''
+
+
+⍝

@@ -1,0 +1,224 @@
+:Namespace NGC
+    (⎕IO ⎕ML)←1
+    project_name←''
+    project_dir←''
+    packages←⍬
+    quiet←0
+    
+    :Section Dev
+        
+        Log ← {quiet:_←⍵ ⋄ ⎕←⍵}
+        
+    :EndSection
+    
+    :Section System
+        
+        GetDotNetRunningVersion←{
+       ⍝ More detailed version in [DYALOG]/SALT/spice/Spice.dyalog (used in ]TOOLS.Version etc.)
+       ⍝ 0/1/2: 0=nothing, 1=.NET Framework, 2=.NET Core / .NET 5+
+            0::0
+            ⎕USING←'' 'System'
+            4=System.Environment.Version.Major:1
+            2
+            
+        }
+        
+        PackageCache←{
+            ⎕USING←'System'
+            path←Environment.(GetFolderPath SpecialFolder.UserProfile)
+            cache←path,'/.nuget/packages/'
+            ~⎕NEXISTS cache:('global-cache not found (',cache,')')⎕SIGNAL 19
+            cache
+        }
+        
+        FindFiles ← {0(⎕ninfo('Wildcard'1)('Recurse'1))⍵}
+        
+    :EndSection
+    
+    :Section DotNetProject
+        
+        Init←{ 
+            ⍺←'' 
+            packages⊢←⍬ 
+            project_name⊢←⍵
+            CreateDotNetProject ⍺ SetProjectFolder ⍵
+        }
+        
+        SetProjectFolder←{            
+            ''≡⍺:project_dir⊢←GetTmpFolder ⍵
+            project_dir⊣project_dir⊢←PathByOS ⍺,'/',⍵            
+        }
+        
+        CreateDotNetProject←{ ⎕CMD'dotnet new classlib -o ',⍵ }
+        
+        GetTmpFolder←{
+            ⎕USING←'' 'System.Runtime.dll'
+            tmp←System.IO.Path.GetTempPath
+            tmp,'/',⍵
+        }
+        
+        PathByOS←{
+            win←'w'≡¯1⎕C⊃⊃'.'⎕WG'APLVersion'
+            (fm to)←(1+win)⊃'\/' '/\'
+            to@(fm∘=)⊢⍵        
+        }
+        
+        Export ← {
+       ⍝ install: export .csproj? or 
+       ⍝ ⍵: char vec :: target .NET version or 'install'
+       ⍝    install: export .csproj or config so that dependencies can be installed by end user NGC.Restore or NGC.Install? 
+       ⍝     target: copy DLLs to folder ⍺
+       ⍝ ⍺: char vec :: export items to this folder
+       ⍝                default to 'dist' subdir of dotnet project
+       ⍝ Check that target frameworks available in project
+            ⍺←project_dir,'/dist'
+            'install'≡⍵:ExportDotNetProject ⍺
+            proj←project_dir,'/',project_name,'.csproj'
+            (d n v a t)←↓⍉⎕XML⊃⎕NGET proj
+       ⍝ Add specified target .NET frameworks to project file:
+            tf←n∊'TargetFramework' 'TargetFrameworks'                            
+            fwks←';'(≠⊆⊢)v⊃⍨tfi←⍸tf            
+            n[tfi]←⊂'TargetFrameworks'
+            v[tfi]←(⊣,';',⊢)/fwks∪⊆⍵
+       ⍝ Delete all nodes except 'TargetFramework(s)' within PropertyGroup:
+            pg←⍸n∊⊂'PropertyGroup'            
+            g←+\d=gd←d[pg]
+            keep←~(~tf)∧(d>gd)∧g=g[pg]
+            (d n v a t)⌿⍨←⊂keep            
+            txt←⎕xml ⍉↑d n v a
+            _←txt ⎕nput proj 1   ⍝ Overwrite project file
+       ⍝ WIBNI inform user which .NET runtimes are compatible    
+            ⎕←'dotnet publish'
+        }
+        
+    :endsection
+    
+    :section Packages
+        
+        Install ← {
+            packages,←AddPackage¨↓⍵ 
+            packages.framework ← BestFrameworks packages
+        }
+        
+        AddPackage ← {
+       ⍝ ⍵: package_name [version_string] [using_namespace_string(s)] [package_dll_or_exe]
+       ⍝ ←: ref to package definition namespace
+            p ← ⎕ns⍬
+            arg←⍵,⍥⊆(4-≢⊆⍵)⍴⊂''   ⍝ Empty default arguments
+            p.(name version useNS dll) ← arg
+            pkg←(⊣,' --version ',⊢)/⍵
+            AP←{⎕CMD'dotnet add ',⍺,' package ',⍵}
+            _←Log project_dir∘AP¨pkg
+            p
+        }
+        
+        BestFrameworks ← {
+       ⍝ ⍺: char vec :: target .NET version
+       ⍝       empty :: currently running .NET version
+       ⍝ ⍵: ⎕NS :: package namespaces 
+       ⍝ ←: vtv :: package frameworks to use
+            
+       ⍝ Support:
+       ⍝ net4*: .NET Framework
+        ⍝ net(>4)*: .NET
+        ⍝ netcoreapp3.1: .NET Core
+        ⍝ netstandard*: All 
+            
+            ⍺←''
+            (ver fwk)←GetPackageInfo ⍵
+            dnv←GetDotNetRunningVersion⍬
+            0=dnv:'.NET Unavailable'⎕signal 11
+            latest←⊃∘⍒¨⍎¨¨¨'.'(≠⊆⊢)¨¨ver
+            best_ver←latest⊃¨ver
+            best_fwk←⊃¨latest
+            cache←PackageCache⍬
+            Find←
+            dlls←(⊃,/)¨Find¨cache∘,¨⍵.name,¨'/',¨best_ver,¨⊂'/*.dll'
+            paths←⊃,/best_fwk{⍵/⍨⍺∘(∨/⍷)¨⍵}¨dlls
+            
+        }
+        
+        FullPath ← {
+            (ver fwk)←⍵
+            cache←PackageCache⍬
+            ⊃,/⊃,/FindFiles cache∘,¨⍵.name,¨'/',¨latest,¨⊂'/*.dll'
+        }
+        
+        BestDLLs ← {
+            (ver fwk)←GetPackageInfo ⍵
+            dnv←GetDotNetRunningVersion⍬
+            
+        }
+        
+        GetPackageInfo ← {
+            cache←PackageCache⍬            
+            List←⊃(⊣,',',⊢)/
+            pkgs←cache∘,¨packages.name
+            ~∧/ex←⎕NEXISTS pkgs:('packages not found: ',(List ⍵/⍨~ex),'. Try Restore ')⎕SIGNAL 19
+            
+            DirTree←{(n t)←0 1(⎕ninfo⎕opt(('Wildcard'1)('Recurse'1)))⍵,'/*' ⋄ (1=t)/n}
+            dirs←⊃,/pkgs,⍥⊆¨DirTree¨pkgs
+            cd←+/cache∊'/\'
+            d←cd-⍨+/¨b←∊∘'/\'¨dirs
+            GetLeaves←{1↓⍺/⍨∨\⌽<\⌽⍵}
+            val←dirs GetLeaves¨b
+            k←+\0=d   ⍝ Package key
+            Ver←(1=d)∘⌿ ⋄ Fwk←(1<d)∘⌿
+            ver←k⊢∘⊂⌸⍥Ver val
+            fwk←{(vk v)←↓⍉1↓⍵ ⋄ vk{⊂1↓⍵~⊂'lib'}⌸v}¨k⊢∘⊂⌸⍉↑(+\1=d)val
+            
+            ver fwk
+        }
+        
+        ListPackages ← {
+            (d n v t)←↓⍉0⎕JSON⎕opt'Format' 'M' ⊃⎕nget project_dir,'/obj/project.assets.json'
+            _←2{p[⍵]←⍺[⍺⍸⍵]}⌿⊢∘⊂⌸d⊣p←⍳≢d   ⍝ Depth to Parent vector
+           ⍝ Add dependencies to Using for installed package
+            E←{∧/(≢⍵)≥⍵⍳⍺}   ⍝ High rank membership
+            i←⍸(n,⍪v)E'type' 'package'
+            (pkg ver)←↓⍉↑'/'∘(≠⊆⊢)¨n[p[pkg]]   ⍝ What about multiple ver?                
+            
+        }
+        
+        LPJSON←{
+            json←0⎕JSON⊃⎕nget project_dir,'/obj/project.assets.json'
+            JSONMangle←{0(7162⌶)⍵}
+            JSONMangle
+        }
+        
+        Using←{
+       ⍝ this is where it might make sense for each package to be an instance of a class
+       ⍝ or rather stored as a namespace itself
+       ⍝ the logic should be done at install / export time?
+       ⍝ then this just becomes a getter for pre-computed values
+            
+       ⍝ default: use highest framework compatible with running .NET version
+       ⍝  config: use specified framework?
+       ⍝  export: use framework specified at export   
+        }
+        
+        ∇ DependencyHook
+           ⍝ When an assembly is loaded, find and load its dependencies
+           ⍝ Alternatively, could use project.assets.json (see ListPackages) to locate and load dependencies
+          ⎕USING←'System'     
+          cd←AppDomain.CurrentDomain
+          cd.onAssemblyResolve←'#.NugetConsum.NuGetPackageHandler' 
+        ∇
+        
+        ∇ NuGetPackageHandler(obj args);p;⎕USING
+          ⎕←obj
+          ⎕←args
+          ⎕USING←'System' 'System.Reflection'
+          split←{1↓¨(⍺=⍺,⍵)⊂⍺,⍵}
+          trimEndAt←{(-(⌽⍵)⍳⍺)↓⍵}
+          p←⎕NEW Package args.Name
+          
+          p.version←⊃{(⍒⍵)⌷⍵}p.Versions
+          p.framework←⊃p.Frameworks
+          ⎕←'Loading:',p.FullPath
+          Assembly.LoadFrom⊂p.FullPath
+        ∇
+        
+    :endsection
+    
+:EndNamespace
