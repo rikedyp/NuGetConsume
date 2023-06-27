@@ -80,10 +80,10 @@
             proj←project_dir,'/',project_name,'.csproj'
             (d n v a t)←↓⍉⎕XML⊃⎕NGET proj
        ⍝ Add specified target .NET frameworks to project file:
-            tf←n∊'TargetFramework' 'TargetFrameworks'                            
+            tf←n∊⊆'TargetFramework' 'TargetFrameworks'                            
             fwks←';'(≠⊆⊢)v⊃⍨tfi←⍸tf            
-            n[tfi]←⊂'TargetFrameworks'
-            v[tfi]←(⊣,';',⊢)/fwks∪⊆⍵
+            n[tfi]←⊂'TargetFramework'
+            v[tfi]←⊆⍵⍝(⊣,';',⊢)/fwks∪⊆⍵
        ⍝ Delete all nodes except 'TargetFramework(s)' within PropertyGroup:
             pg←⍸n∊⊂'PropertyGroup'            
             g←+\d=gd←d[pg]
@@ -92,7 +92,7 @@
             txt←⎕xml ⍉↑d n v a
             _←txt ⎕nput proj 1   ⍝ Overwrite project file
        ⍝ WIBNI inform user which .NET runtimes are compatible    
-            ⎕←'dotnet publish'
+            Log ⎕CMD 'dotnet build ',project_dir,' -f ',⍵
         }
         
     :endsection
@@ -102,6 +102,7 @@
         Install ← {
             packages,←AddPackage¨↓⍵ 
             packages.framework ← BestFrameworks packages
+            packages.dll←
         }
         
         AddPackage ← {
@@ -117,18 +118,20 @@
         }
         
         BestFrameworks ← {
-       ⍝ ⍺: char vec :: target .NET version
-       ⍝       empty :: currently running .NET version
+       ⍝ ⍺: 0/1 :: 0: Error if no compatible version available, 1: Attempt to load DLL anyway         
+            ⍺←0
        ⍝ ⍵: ⎕NS :: package namespaces 
        ⍝ ←: vtv :: package frameworks to use
             
        ⍝ Support:
+       ⍝ Prefer netstandard generally
+       ⍝ Otherwise, use running .NET version
+       ⍝ If not available, could offer to attempt load other version
+       ⍝                   or have option to    
        ⍝ net4*: .NET Framework
         ⍝ net(>4)*: .NET
         ⍝ netcoreapp3.1: .NET Core
-        ⍝ netstandard*: All 
-            
-            ⍺←''
+        ⍝ netstandard*: All                         
             (ver fwk)←GetPackageInfo ⍵
             dnv←GetDotNetRunningVersion⍬
             0=dnv:'.NET Unavailable'⎕signal 11
@@ -154,24 +157,34 @@
             
         }
         
+        DLLPaths←{
+            RecursiveSearch←0 1∘(⎕ninfo⎕opt(('Wildcard'1)('Recurse'1)))
+            (name type)←RecursiveSearch ⍵,'/*.dll'
+            file←2 ⋄ (file=type)/name            
+        }
+        
         GetPackageInfo ← {
-            cache←PackageCache⍬            
+       ⍝ ⍵: Array of NGC package namespace
+       ⍝ ←: Nested char vec :: (versions, frameworks, dll paths) for each package in ⍵      
+            cache←PackageCache⍬
+            pkgs←cache∘,¨⍵.name            
             List←⊃(⊣,',',⊢)/
-            pkgs←cache∘,¨packages.name
             ~∧/ex←⎕NEXISTS pkgs:('packages not found: ',(List ⍵/⍨~ex),'. Try Restore ')⎕SIGNAL 19
             
-            DirTree←{(n t)←0 1(⎕ninfo⎕opt(('Wildcard'1)('Recurse'1)))⍵,'/*' ⋄ (1=t)/n}
-            dirs←⊃,/pkgs,⍥⊆¨DirTree¨pkgs
-            cd←+/cache∊'/\'
-            d←cd-⍨+/¨b←∊∘'/\'¨dirs
-            GetLeaves←{1↓⍺/⍨∨\⌽<\⌽⍵}
-            val←dirs GetLeaves¨b
-            k←+\0=d   ⍝ Package key
-            Ver←(1=d)∘⌿ ⋄ Fwk←(1<d)∘⌿
-            ver←k⊢∘⊂⌸⍥Ver val
-            fwk←{(vk v)←↓⍉1↓⍵ ⋄ vk{⊂1↓⍵~⊂'lib'}⌸v}¨k⊢∘⊂⌸⍉↑(+\1=d)val
+            dlls←DLLPaths¨pkgs                        
             
-            ver fwk
+            m←↑¨dlls                       ⍝ DLL paths as character matrices
+            d←+\¨∊∘'/\'¨m                  ⍝ Depth at each char of DLL parths
+            pd←+/¨∊∘'/\'¨pkgs              ⍝ Package directory depth
+            vers←m⊂⍤⌿⍤1¨⍨(pd+1)=d          ⍝ Installed package versions 
+            fwks←m⊂⍤⌿⍤1⍨¨d(=⍤¯1)¨¯1+⊢/¨d   ⍝ Names of compatible .NET versions            
+            
+            ↓⍉↑vers fwks dlls
+            
+            (ver fp)←↓⍉↑↓∘⍉¨vers{⍺,⊂⍵}⌸¨fwks,∘⍪¨dlls
+            (fwk dll)←↓⍉↑{↓⍉⊃⍪/⍵}¨fp
+            
+            ver fwk dll                       
         }
         
         ListPackages ← {
