@@ -218,3 +218,19 @@ Package versions are specified using the NuGet version ranges interval notation 
 |`(1.0,2.0)`|`1.0 < x < 2.0`|Exact range, exclusive|
 |`[1.0,2.0)`|`1.0 ≤ x < 2.0`|Mixed inclusive minimum and exclusive maximum version|
 |`(1.0)`|invalid|invalid|
+
+## More notes
+- you can configure Dyalog environment to use specific .NET version
+- official support / default: 17.1: 3.1 ,18.2: 3.1, 19.0: 6.0
+- NGC.Export will export .csproj OR dlls for currently configured .NET version (currently running)
+- NGC.Export'install' ∨ 'publish'
+]nuget.load package
+NGC.AddPackage'Netcore.Encrypt'
+- MUST document info about platform compatibilty
+
+'BouncyCastle'
+- Can we get DLL name from nuget package? if different from package name...
+- GetNamespaces?
+- get dependencies from project.assets.json
+
+
