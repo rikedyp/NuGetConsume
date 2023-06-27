@@ -76,6 +76,28 @@
         ∇
 
 
+⍝ Get the list of namespace (Types) in the assembly we have chosen        
+        ∇r←GetNamespaces;⎕USING;assemblies;list;ix;myAss;ass
+        ⎕USING←'System' 'System.Reflection' 
+        
+        myAss←Assembly.ReflectionOnlyLoadFrom ⊂FullPath
+
+        assemblies←AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies
+        
+        ix←  (⊃¨ ',' split¨   assemblies.ToString)  ⍳ ⊂  '.' trimEndAt myDLL
+        
+        ('Assembly ',myDLL,' not load')  ⎕signal (ix>≢assemblies)/6 
+        :trap 0
+          ass← Assembly.ReflectionOnlyLoad¨⊂¨ myAss.GetReferencedAssemblies.FullName
+
+        list←myAss.GetExportedTypes.ToString
+          list←('<'≠⊃¨list)/list
+         r←  ∪  '.' trimEndAt¨ list
+         :else   
+           r←⍬
+         :endtrap 
+        ∇
+
 
         ∇ r←Versions;pckgs;pckg
           :Access public
@@ -420,7 +442,7 @@
 
     ∇ Hook
       ⎕USING←'System'
-     
+     ⍝ Not needed after publish
       cd←AppDomain.CurrentDomain
       cd.onAssemblyResolve←'#.NugetConsum.NuGetPackageHandler'
     ∇
