@@ -49,7 +49,11 @@
             project_dir⊣project_dir⊢←PathByOS ⍺,'/',⍵            
         }
         
-        CreateDotNetProject←{ ⎕CMD'dotnet new classlib -o ',⍵ }
+        CreateDotNetProject←{
+            ⍺←''
+            fwk←(''≢⍺)/' -f ',⍺
+            ⎕CMD'dotnet new classlib -o ',⍵,fwk             
+        }
         
         GetTmpFolder←{
             ⎕USING←'' 'System.Runtime.dll'
