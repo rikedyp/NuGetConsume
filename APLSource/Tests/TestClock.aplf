@@ -1,0 +1,6 @@
+TestClock;ngc
+ngc←Init'\tmp\clock'
+ngc AddPackages 'Clock' '1.0.3'
+⎕USING←''
+⎕USING,←ngc Using'Clock'
+Assert 2 2 3 1≡+/'/ :+'∘.=⍕Clock.UtcNow

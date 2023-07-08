@@ -1,8 +1,10 @@
  proj←Init dir
- 'proj'⎕NS'dir' 'Restore' 'Using'
- proj.⎕DF'[NuGetConsume Project Namespace]'
+ 'proj'⎕NS''
+ proj.⎕DF'[NuGet Dependencies]'
+ proj.project_dir←dir
  CreateDotNetProject dir
- proj.dependencies←GetDependencies dir
- proj.dotnetver←GetDotNetVersion dir
- dir AddPackages proj.dependencies
- RestoreDotNetProject dir
+⍝ proj.dependencies←GetDependencies dir
+ proj.packages←⍬
+ proj.dotnetver←GetDotNetVersion ⍬
+⍝ dir AddPackages proj.dependencies
+⍝ RestoreDotNetProject dir

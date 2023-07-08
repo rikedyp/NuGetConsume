@@ -1,29 +1,19 @@
- Using←{
+Using←{
 ⍝ ⍵: [packages] (empty: all)
 ⍝ ⍺: dotnetversion (default: running)
-     ⍺←''
-     dnv←{0∊⍴⍵:⊃GetDotNetRunningVersion ⋄ GetDotNetVersion ⍵}⍺
-     0=dnv:'.NET unavailable'⎕SIGNAL 11
-     pref←dnv⊃('netstandard' 'net6.0')
-
-     Prefix←{⍵/⍨∧\'.'≠⍵}
-     pkg←{0∊⍴⍵:⊣/dependencies ⋄ ⊆⍵}⍵
-     pi←(⊣/dependencies)⍳pkg
-     nf←∨/pi>≢dependencies:'Packages not found: ',⍕nf/pkg
-     ver←⊂¨(⊢/dependencies)[(⊣/dependencies)⍳pkg]
-     (paths versions dotnet)←Versions pkg
-     ∨/~ver∊¨versions:   ⍝ Version not found
-
-     I←{(⊂⍵)⌷⍺}
-     avail←(⊃,/)¨dotnet I¨versions⍳¨ver
-     fwk←avail/¨⍨pref∘(∨/⍷)¨¨avail   ⍝ PrefixOf
-     no←1>≢¨fwk
-     ∨/no:'Packages: (',(⍕no/⍵),') not available for .NET version ',(⍕pref)
-     fwk←{⊃(⊂⍒⍵)⌷⍵}¨fwk
-     dll←,∘'.dll'¨Prefix¨pkg
-     ver←⊃¨ver ⋄ lib←⊂'lib'
-     JoinPath←⊃(⊣,'/',⊢)/
-     using←JoinPath¨↓⍉↑paths ver lib fwk dll
-     ∨/no←~⎕NEXISTS using:
-     pkg,¨','∘,¨using
- }
+    dnv←⍺.dotnetver
+    ass←0⎕json⊃⎕nget ⍺.project_dir,'/obj/project.assets.json'
+    mat←0(⎕json⎕opt'Format' 'M')⊃⎕nget ⍺.project_dir,'/obj/project.assets.json'
+    (d n v t)←↓⍉mat ⋄ _←2{p[⍵]←⍺[⍺⍸⍵]}⌿⊢∘⊂⌸d⊣p←⍳≢d
+    tgt←p=1+⍸'targets' 'net6.0'⍷n ⋄ pid←⍸p=tgt
+    name←,⊆⍵ ⋄ pn←,∘'/'¨name
+    pkg←⍸tgt(∨⌿∧⍤1)pn∘.(⊃⍷)n
+    isdep←'dependencies'∘≡¨n
+    GetDeps←{⍵∪⍸tgt∧n∊(⊣,'/',⊢)/⍉↑(n v)/¨⍨⊂p∊⍸isdep∧p∊⍵}
+    use←GetDeps⍣≡pkg
+    dll←'/',¨n⌿⍨p∊⍸('runtime'∘≡¨n)∧p∊use
+    ⎕USING←'System'
+    up←Environment.(GetFolderPath SpecialFolder.UserProfile)
+    cache←up,'/.nuget/packages/'
+    name,¨',',¨cache∘,¨n[pkg],¨dll
+}

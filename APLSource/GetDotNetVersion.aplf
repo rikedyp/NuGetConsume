@@ -1,8 +1,10 @@
  GetDotNetVersion←{
-⍝ ⍵: char vec :: .NET version
-⍝ ←: 0=nothing, 1=.net Framework, 2=NET CORE
-     dnv←⊃2⊃'.'⎕VFI ⍵
-     4=dnv:1   ⍝ .NET Framework
-     4<dnv:2   ⍝ .NET Core / new .NET
-     0         ⍝ Nothing
+⍝ More detailed version in [DYALOG]/SALT/spice/Spice.dyalog (used in ]TOOLS.Version etc.)
+⍝ 0/1/2: 0=nothing, 1=.NET Framework, 2=.NET Core / .NET 5+
+     0::'No .NET available. Install a .NET SDK or check [NETCORE] environment variable.'⎕SIGNAL 11
+     ⎕USING←'' 'System'
+     ver←⍕System.Environment.Version
+     '4.0.30319.42000'≡ver:⊃,/2↑'.'(≠⊆⊢)⊃⌽' '(≠⊆⊢)Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+     '4.0.30319.'≡10↑ver:ver
+     ⊃(⊣,'.',⊢)/⍕¨System.Environment.Version.(Major Minor)
  }

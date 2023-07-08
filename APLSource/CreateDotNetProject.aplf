@@ -1,3 +1,4 @@
  CreateDotNetProject←{
-     ⎕CMD'dotnet new classlib -o ',⍵
+     dnv←'net',GetDotNetRunningVersion⍬
+     ⎕CMD'dotnet new classlib -f ',dnv,' -o ',⍵
  }
