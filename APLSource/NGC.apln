@@ -1,9 +1,10 @@
-:Namespace NGC
+:Class NGC
     (⎕IO ⎕ML)←1
-    project_name←''
-    project_dir←''
-    packages←⍬
-    quiet←0
+    :field public project_name
+    :field public project_dir
+	:field public dotnet_version
+    :field private packages←⍬
+    :field private quiet←0
     
     :Section Dev
         
@@ -13,229 +14,76 @@
     
     :Section System
         
-        GetDotNetRunningVersion←{
-       ⍝ More detailed version in [DYALOG]/SALT/spice/Spice.dyalog (used in ]TOOLS.Version etc.)
-       ⍝ 0/1/2: 0=nothing, 1=.NET Framework, 2=.NET Core / .NET 5+
-            0::0
-            ⎕USING←'' 'System'
-            4=System.Environment.Version.Major:1
-            2
-            
-        }
-        
-        PackageCache←{
-            ⎕USING←'System'
-            path←Environment.(GetFolderPath SpecialFolder.UserProfile)
-            cache←path,'/.nuget/packages/'
-            ~⎕NEXISTS cache:('global-cache not found (',cache,')')⎕SIGNAL 19
-            cache
-        }
-        
-        FindFiles ← {0(⎕ninfo('Wildcard'1)('Recurse'1))⍵}
+ ∇ dnv←GetDotNetVersion;ver
+⍝ More detailed version in [DYALOG]/SALT/spice/Spice.dyalog (used in ]TOOLS.Version etc.)
+⍝ 0/1/2: 0=nothing, 1=.NET Framework, 2=.NET Core / .NET 5+
+⍝ TODO 0 case
+     ⎕USING←'' 'System'
+	 :trap 0
+       ver←⍕System.Environment.Version
+	 :else
+	   'No .NET available. Install a .NET SDK or check [NETCORE] environment variable.'⎕SIGNAL 11
+	 :endtrap
+
+	 :if '4.0.30319.42000'≡ver
+       dnv←⊃,/2↑'.'(≠⊆⊢)⊃⌽' '(≠⊆⊢)Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+     :elseif '4.0.30319.'≡10↑ver:
+	   dnv←ver
+	 :else
+       dnv←⊃(⊣,'.',⊢)/⍕¨System.Environment.Version.(Major Minor)
+	 :endif  
+	 dnv,⍨←'net'
+ ∇
+
         
     :EndSection
     
     :Section DotNetProject
-        
-        Init←{ 
-            ⍺←'' 
-            packages⊢←⍬ 
-            project_name⊢←⍵
-            CreateDotNetProject ⍺ SetProjectFolder ⍵
-        }
-        
-        SetProjectFolder←{            
-            ''≡⍺:project_dir⊢←GetTmpFolder ⍵
-            project_dir⊣project_dir⊢←PathByOS ⍺,'/',⍵            
-        }
-        
-        CreateDotNetProject←{
-            ⍺←''
-            fwk←(''≢⍺)/' -f ',⍺
-            ⎕CMD'dotnet new classlib -o ',⍵,fwk             
-        }
-        
-        GetTmpFolder←{
-            ⎕USING←'' 'System.Runtime.dll'
-            tmp←System.IO.Path.GetTempPath
-            tmp,'/',⍵
-        }
-        
-        PathByOS←{
-            win←'w'≡¯1⎕C⊃⊃'.'⎕WG'APLVersion'
-            (fm to)←(1+win)⊃'\/' '/\'
-            to@(fm∘=)⊢⍵        
-        }
-        
-        Export ← {
-       ⍝ install: export .csproj? or 
-       ⍝ ⍵: char vec :: target .NET version or 'install'
-       ⍝    install: export .csproj or config so that dependencies can be installed by end user NGC.Restore or NGC.Install? 
-       ⍝     target: copy DLLs to folder ⍺
-       ⍝ ⍺: char vec :: export items to this folder
-       ⍝                default to 'dist' subdir of dotnet project
-       ⍝ Check that target frameworks available in project
-            ⍺←project_dir,'/dist'
-            'install'≡⍵:ExportDotNetProject ⍺
-            proj←project_dir,'/',project_name,'.csproj'
-            (d n v a t)←↓⍉⎕XML⊃⎕NGET proj
-       ⍝ Add specified target .NET frameworks to project file:
-            tf←n∊⊆'TargetFramework' 'TargetFrameworks'                            
-            fwks←';'(≠⊆⊢)v⊃⍨tfi←⍸tf            
-            n[tfi]←⊂'TargetFramework'
-            v[tfi]←⊆⍵⍝(⊣,';',⊢)/fwks∪⊆⍵
-       ⍝ Delete all nodes except 'TargetFramework(s)' within PropertyGroup:
-            pg←⍸n∊⊂'PropertyGroup'            
-            g←+\d=gd←d[pg]
-            keep←~(~tf)∧(d>gd)∧g=g[pg]
-            (d n v a t)⌿⍨←⊂keep            
-            txt←⎕xml ⍉↑d n v a
-            _←txt ⎕nput proj 1   ⍝ Overwrite project file
-       ⍝ WIBNI inform user which .NET runtimes are compatible    
-            Log ⎕CMD 'dotnet build ',project_dir,' -f ',⍵
-        }
+
+∇ make1 path;dnv
+:access public
+:implements constructor
+⍝ Not a huge fan of this "several Make functions for different numbers of arguments" thing...
+project_dir←path   ⍝ 
+project_name←⊃⌽⎕nparts path
+dotnet_version←GetDotNetVersion
+⎕←⎕CMD 'dotnet new classlib -f ',dotnet_version,' -o ',path
+∇
+
+∇ AddPackages pkgs;str;AP
+:access public   ⍝ this is also a pain - can we do something that isn't a class?
+    pkgs←,⊆pkgs
+    str←(⊣,' --version ',⊢)/pkgs
+    AP←{⎕CMD'dotnet add ',⍺,' package ',⍵}
+    project_dir∘AP¨str
+    packages,←pkgs
+∇
+
+∇ using←GetUsing pkg
+:access public
+  using←Using pkg
+∇
+
+ Using←{
+⍝ ⍵: [packages] (empty: all)
+⍝ ⍺: dotnetversion (default: running)
+    dnv←dotnet_version
+    mat←0(⎕json⎕opt'Format' 'M')⊃⎕nget project_dir,'/obj/project.assets.json'
+    (d n v t)←↓⍉mat ⋄ _←2{p[⍵]←⍺[⍺⍸⍵]}⌿⊢∘⊂⌸d⊣p←⍳≢d
+    tgt←p=1+⍸'targets' 'net6.0'⍷n ⋄ pid←⍸p=tgt
+    name←,⊆⍵ ⋄ pn←,∘'/'¨name
+    pkg←⍸tgt(∨⌿∧⍤1)pn∘.(⊃⍷)n
+    isdep←'dependencies'∘≡¨n
+    GetDeps←{⍵∪⍸tgt∧n∊(⊣,'/',⊢)/⍉↑(n v)/¨⍨⊂p∊⍸isdep∧p∊⍵}
+    use←GetDeps⍣≡pkg
+    dll←'/',¨n⌿⍨p∊⍸('runtime'∘≡¨n)∧p∊use
+    ⎕USING←'System'
+    up←Environment.(GetFolderPath SpecialFolder.UserProfile)
+    cache←up,'/.nuget/packages/'
+    name,¨',',¨cache∘,¨n[pkg],¨dll
+}
+
         
     :endsection
     
-    :section Packages
-        
-        Install ← {
-            packages,←AddPackage¨↓⍵ 
-            packages.framework ← BestFrameworks packages
-            packages.dll←
-        }
-        
-        AddPackage ← {
-       ⍝ ⍵: package_name [version_string] [using_namespace_string(s)] [package_dll_or_exe]
-       ⍝ ←: ref to package definition namespace
-            p ← ⎕ns⍬
-            arg←⍵,⍥⊆(4-≢⊆⍵)⍴⊂''   ⍝ Empty default arguments
-            p.(name version useNS dll) ← arg
-            pkg←(⊣,' --version ',⊢)/⍵
-            AP←{⎕CMD'dotnet add ',⍺,' package ',⍵}
-            _←Log project_dir∘AP¨pkg
-            p
-        }
-        
-        BestFrameworks ← {
-       ⍝ ⍺: 0/1 :: 0: Error if no compatible version available, 1: Attempt to load DLL anyway         
-            ⍺←0
-       ⍝ ⍵: ⎕NS :: package namespaces 
-       ⍝ ←: vtv :: package frameworks to use
-            
-       ⍝ Support:
-       ⍝ Prefer netstandard generally
-       ⍝ Otherwise, use running .NET version
-       ⍝ If not available, could offer to attempt load other version
-       ⍝                   or have option to    
-       ⍝ net4*: .NET Framework
-        ⍝ net(>4)*: .NET
-        ⍝ netcoreapp3.1: .NET Core
-        ⍝ netstandard*: All                         
-            (ver fwk)←GetPackageInfo ⍵
-            dnv←GetDotNetRunningVersion⍬
-            0=dnv:'.NET Unavailable'⎕signal 11
-            latest←⊃∘⍒¨⍎¨¨¨'.'(≠⊆⊢)¨¨ver
-            best_ver←latest⊃¨ver
-            best_fwk←⊃¨latest
-            cache←PackageCache⍬
-            Find←
-            dlls←(⊃,/)¨Find¨cache∘,¨⍵.name,¨'/',¨best_ver,¨⊂'/*.dll'
-            paths←⊃,/best_fwk{⍵/⍨⍺∘(∨/⍷)¨⍵}¨dlls
-            
-        }
-        
-        FullPath ← {
-            (ver fwk)←⍵
-            cache←PackageCache⍬
-            ⊃,/⊃,/FindFiles cache∘,¨⍵.name,¨'/',¨latest,¨⊂'/*.dll'
-        }
-        
-        BestDLLs ← {
-            (ver fwk)←GetPackageInfo ⍵
-            dnv←GetDotNetRunningVersion⍬
-            
-        }
-        
-        DLLPaths←{
-            RecursiveSearch←0 1∘(⎕ninfo⎕opt(('Wildcard'1)('Recurse'1)))
-            (name type)←RecursiveSearch ⍵,'/*.dll'
-            file←2 ⋄ (file=type)/name            
-        }
-        
-        GetPackageInfo ← {
-       ⍝ ⍵: Array of NGC package namespace
-       ⍝ ←: Nested char vec :: (versions, frameworks, dll paths) for each package in ⍵      
-            cache←PackageCache⍬
-            pkgs←cache∘,¨⍵.name            
-            List←⊃(⊣,',',⊢)/
-            ~∧/ex←⎕NEXISTS pkgs:('packages not found: ',(List ⍵/⍨~ex),'. Try Restore ')⎕SIGNAL 19
-            
-            dlls←DLLPaths¨pkgs                        
-            
-            m←↑¨dlls                       ⍝ DLL paths as character matrices
-            d←+\¨∊∘'/\'¨m                  ⍝ Depth at each char of DLL parths
-            pd←+/¨∊∘'/\'¨pkgs              ⍝ Package directory depth
-            vers←m⊂⍤⌿⍤1¨⍨(pd+1)=d          ⍝ Installed package versions 
-            fwks←m⊂⍤⌿⍤1⍨¨d(=⍤¯1)¨¯1+⊢/¨d   ⍝ Names of compatible .NET versions            
-            
-            ↓⍉↑vers fwks dlls
-            
-            (ver fp)←↓⍉↑↓∘⍉¨vers{⍺,⊂⍵}⌸¨fwks,∘⍪¨dlls
-            (fwk dll)←↓⍉↑{↓⍉⊃⍪/⍵}¨fp
-            
-            ver fwk dll                       
-        }
-        
-        ListPackages ← {
-            (d n v t)←↓⍉0⎕JSON⎕opt'Format' 'M' ⊃⎕nget project_dir,'/obj/project.assets.json'
-            _←2{p[⍵]←⍺[⍺⍸⍵]}⌿⊢∘⊂⌸d⊣p←⍳≢d   ⍝ Depth to Parent vector
-           ⍝ Add dependencies to Using for installed package
-            E←{∧/(≢⍵)≥⍵⍳⍺}   ⍝ High rank membership
-            i←⍸(n,⍪v)E'type' 'package'
-            (pkg ver)←↓⍉↑'/'∘(≠⊆⊢)¨n[p[pkg]]   ⍝ What about multiple ver?                
-            
-        }
-        
-        LPJSON←{
-            json←0⎕JSON⊃⎕nget project_dir,'/obj/project.assets.json'
-            JSONMangle←{0(7162⌶)⍵}
-            JSONMangle
-        }
-        
-        Using←{
-       ⍝ this is where it might make sense for each package to be an instance of a class
-       ⍝ or rather stored as a namespace itself
-       ⍝ the logic should be done at install / export time?
-       ⍝ then this just becomes a getter for pre-computed values
-            
-       ⍝ default: use highest framework compatible with running .NET version
-       ⍝  config: use specified framework?
-       ⍝  export: use framework specified at export   
-        }
-        
-        ∇ DependencyHook
-           ⍝ When an assembly is loaded, find and load its dependencies
-           ⍝ Alternatively, could use project.assets.json (see ListPackages) to locate and load dependencies
-          ⎕USING←'System'     
-          cd←AppDomain.CurrentDomain
-          cd.onAssemblyResolve←'#.NugetConsum.NuGetPackageHandler' 
-        ∇
-        
-        ∇ NuGetPackageHandler(obj args);p;⎕USING
-          ⎕←obj
-          ⎕←args
-          ⎕USING←'System' 'System.Reflection'
-          split←{1↓¨(⍺=⍺,⍵)⊂⍺,⍵}
-          trimEndAt←{(-(⌽⍵)⍳⍺)↓⍵}
-          p←⎕NEW Package args.Name
-          
-          p.version←⊃{(⍒⍵)⌷⍵}p.Versions
-          p.framework←⊃p.Frameworks
-          ⎕←'Loading:',p.FullPath
-          Assembly.LoadFrom⊂p.FullPath
-        ∇
-        
-    :endsection
-    
-:EndNamespace
+:endclass
