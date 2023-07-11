@@ -60,30 +60,24 @@ dotnet_version←GetDotNetVersion
     packages,←pkgs
 ∇
 
-∇ using←GetUsing pkg
-:access public
-  using←Using pkg
-∇
-
- Using←{
-⍝ ⍵: [packages] (empty: all)
-⍝ ⍺: dotnetversion (default: running)
-    dnv←dotnet_version
-    mat←0(⎕json⎕opt'Format' 'M')⊃⎕nget project_dir,'/obj/project.assets.json'
+    ∇ using←Using pkg;mat;d;n;v;t;p;tgt;pid;name;isdep;GetDeps;use;dll;⎕USING;up;cache;pn;pkgs;tp
+⍝      :If ''≡pkg ⋄ pkg←packages ⋄ :EndIf
+      :Access public
+      mat←0(⎕JSON ⎕OPT'Format' 'M')⊃⎕NGET project_dir,'/obj/project.assets.json'
     (d n v t)←↓⍉mat ⋄ _←2{p[⍵]←⍺[⍺⍸⍵]}⌿⊢∘⊂⌸d⊣p←⍳≢d
-    tgt←p=1+⍸'targets' 'net6.0'⍷n ⋄ pid←⍸p=tgt
-    name←,⊆⍵ ⋄ pn←,∘'/'¨name
-    pkg←⍸tgt(∨⌿∧⍤1)pn∘.(⊃⍷)n
+      tgt←⍸p=1+⍸'version' 'targets'⍷n ⋄ tp←p=tgt   ⍝ Target; target package
+      name←,⊆pkg ⋄ pn←,∘'/'¨name
+      pkgs←⍸tp(∨⌿∧⍤1)pn∘.(⊃⍷)n   ⍝ This pkg node
     isdep←'dependencies'∘≡¨n
-    GetDeps←{⍵∪⍸tgt∧n∊(⊣,'/',⊢)/⍉↑(n v)/¨⍨⊂p∊⍸isdep∧p∊⍵}
-    use←GetDeps⍣≡pkg
+      GetDeps←{⍵∪⍸tp∧n∊(⊣,'/',⊢)/⍉↑(n v)/¨⍨⊂p∊⍸isdep∧p∊⍵}
+      use←GetDeps⍣≡pkgs
     dll←'/',¨n⌿⍨p∊⍸('runtime'∘≡¨n)∧p∊use
+      dll⌿⍨←'.dll'∘≡¨¯4↑¨dll
     ⎕USING←'System'
     up←Environment.(GetFolderPath SpecialFolder.UserProfile)
     cache←up,'/.nuget/packages/'
-    name,¨',',¨cache∘,¨n[pkg],¨dll
-}
-
+      using←name,¨',',¨cache∘,¨n[pkgs],¨dll
+    ∇
         
     :endsection
     
