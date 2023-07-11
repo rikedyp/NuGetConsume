@@ -3,7 +3,7 @@
     :field public project_name
     :field public project_dir
 	:field public dotnet_version
-    :field private packages←⍬
+    :field public packages←⍬
     :field private quiet←0
     
     :Section Dev
