@@ -19,19 +19,19 @@
 ⍝ 0/1/2: 0=nothing, 1=.NET Framework, 2=.NET Core / .NET 5+
 ⍝ TODO 0 case
      ⎕USING←'' 'System'
-	 :trap 0
+      :Trap 0
        ver←⍕System.Environment.Version
-	 :else
+      :Else
 	   'No .NET available. Install a .NET SDK or check [NETCORE] environment variable.'⎕SIGNAL 11
-	 :endtrap
+      :EndTrap
 
-	 :if '4.0.30319.42000'≡ver
+      :If '4.0.30319.42000'≡ver
        dnv←⊃,/2↑'.'(≠⊆⊢)⊃⌽' '(≠⊆⊢)Runtime.InteropServices.RuntimeInformation.FrameworkDescription
-     :elseif '4.0.30319.'≡10↑ver:
+      :ElseIf '4.0.30319.'≡10↑ver
 	   dnv←ver
-	 :else
+      :Else
        dnv←⊃(⊣,'.',⊢)/⍕¨System.Environment.Version.(Major Minor)
-	 :endif  
+      :EndIf
 	 dnv,⍨←'net'
  ∇
 
