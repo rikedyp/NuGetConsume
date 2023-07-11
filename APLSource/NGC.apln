@@ -41,13 +41,14 @@
     :Section DotNetProject
 
 ∇ make1 path;dnv
-:access public
-:implements constructor
+      :Access public
+      :Implements constructor
 ⍝ Not a huge fan of this "several Make functions for different numbers of arguments" thing...
 project_dir←path   ⍝ 
-project_name←⊃⌽⎕nparts path
+      project_name←⊃⌽⎕NPARTS path
 dotnet_version←GetDotNetVersion
-⎕←⎕CMD 'dotnet new classlib -f ',dotnet_version,' -o ',path
+⍝ why cmd errors don't come back to APL
+      ⎕←↑⎕CMD'dotnet new classlib --target-framework-override ',dotnet_version,' -o ',path
 ∇
 
 ∇ AddPackages pkgs;str;AP
